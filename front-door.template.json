@@ -1,0 +1,110 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "resources": [
+      {
+          "type": "Microsoft.Cdn/Profiles",
+          "apiVersion": "2022-11-01-preview",
+          "name": "tomcat-frontdoor",
+          "location": "Global",
+          "tags": {},
+          "sku": {
+              "name": "Standard_AzureFrontDoor"
+          },
+          "properties": {
+              "frontDoorId": null,
+              "originResponseTimeoutSeconds": 60
+          }
+      },
+      {
+          "type": "Microsoft.Cdn/Profiles/AfdEndpoints",
+          "apiVersion": "2022-11-01-preview",
+          "name": "tomcat-frontdoor/tomcat",
+          "location": "Global",
+          "dependsOn": [
+              "[resourceId('Microsoft.Cdn/Profiles', 'tomcat-frontdoor')]"
+          ],
+          "properties": {
+              "hostName": "tomcat-cpcjgbfygka8d3cj.z01.azurefd.net",
+              "enabledState": "Enabled",
+              "deploymentStatus": null
+          }
+      },
+      {
+          "type": "Microsoft.Cdn/Profiles/OriginGroups",
+          "apiVersion": "2022-11-01-preview",
+          "name": "tomcat-frontdoor/default-origin-group",
+          "dependsOn": [
+              "[resourceId('Microsoft.Cdn/Profiles', 'tomcat-frontdoor')]"
+          ],
+          "properties": {
+              "loadBalancingSettings": {
+                  "sampleSize": 4,
+                  "successfulSamplesRequired": 3,
+                  "additionalLatencyInMilliseconds": 50
+              },
+              "healthProbeSettings": {
+                  "probePath": "/",
+                  "probeRequestType": "HEAD",
+                  "probeProtocol": "Http",
+                  "probeIntervalInSeconds": 100
+              },
+              "trafficRestorationTimeToHealedOrNewEndpointsInMinutes": null,
+              "sessionAffinityState": "Disabled",
+              "deploymentStatus": null
+          }
+      },
+      {
+          "type": "Microsoft.Cdn/Profiles/OriginGroups/Origins",
+          "apiVersion": "2022-11-01-preview",
+          "name": "tomcat-frontdoor/default-origin-group/default-origin",
+          "dependsOn": [
+              "[resourceId('Microsoft.Cdn/Profiles/OriginGroups', 'tomcat-frontdoor', 'default-origin-group')]"
+          ],
+          "properties": {
+              "hostName": "proud-dune-093c5f110.2.azurestaticapps.net",
+              "httpPort": 80,
+              "httpsPort": 443,
+              "originHostHeader": "proud-dune-093c5f110.2.azurestaticapps.net",
+              "priority": 1,
+              "weight": 1000,
+              "enforceCertificateNameCheck": true,
+              "sharedPrivateLinkResource": null,
+              "enabledState": "Enabled",
+              "deploymentStatus": null
+          }
+      },
+      {
+          "type": "Microsoft.Cdn/Profiles/AfdEndpoints/Routes",
+          "apiVersion": "2022-11-01-preview",
+          "name": "tomcat-frontdoor/tomcat/default-route",
+          "dependsOn": [
+              "[resourceId('Microsoft.Cdn/Profiles/AfdEndpoints', 'tomcat-frontdoor', 'tomcat')]",
+              "[resourceId('Microsoft.Cdn/Profiles/OriginGroups', 'tomcat-frontdoor', 'default-origin-group')]",
+              "[resourceId('Microsoft.Cdn/Profiles/OriginGroups/Origins', 'tomcat-frontdoor', 'default-origin-group', 'default-origin')]"
+          ],
+          "properties": {
+              "customDomains": [],
+              "originGroup": {
+                  "id": "/subscriptions/133e5600-93c4-43f6-8f80-fe083030f8b6/resourceGroups/tomcat_group/providers/Microsoft.Cdn/profiles/tomcat-frontdoor/originGroups/default-origin-group"
+              },
+              "originPath": null,
+              "ruleSets": [],
+              "supportedProtocols": [
+                  "Http",
+                  "Https"
+              ],
+              "patternsToMatch": [
+                  "/*"
+              ],
+              "forwardingProtocol": "MatchRequest",
+              "linkToDefaultDomain": "Enabled",
+              "httpsRedirect": "Enabled",
+              "enabledState": "Enabled",
+              "deploymentStatus": null,
+              "provisioningState": null,
+              "cacheConfiguration": null
+          }
+      }
+  ]
+}
